@@ -198,3 +198,123 @@ reset_preset_colLoop:
     jal setCell
     bltz $v0, reset_error
     j reset_preset_nextCell
+    
+reset_preset_ispreset:
+#keep value
+    move $a0, $s3
+    move $a1, $s4
+    li $a2, -1
+    move $a3, $t0
+    jal setCell
+    bltz $v0, reset_error
+    
+reset_preset_nextCell:
+    addi $s4, $s4, 1
+    j reset_preset_colLoop
+    
+reset_preset_nextRow:
+    addi $s3, $s3, 1 
+    j reset_preset_rowLoop
+
+reset_findConflicts:
+    srl $t0, $s0, 8
+    andi $t0, $t0, 0xFF
+    andi $t1, $s0, 0xFF
+    
+    srl  $t2, $t0, 4
+    andi $t2, $t2, 0x0F
+    srl  $t3, $t1, 4
+    andi $t3, $t3, 0x0F
+    
+    beq  $s1, $t2, reset_error
+    beq  $s1, $t3, reset_error
+    
+    li $s5, 0
+    li $s4, 0
+
+reset_conflict_colLoop:
+    bge $s4, 9, reset_conflict_checkCount
+    li $s3, 0
+    
+reset_conflict_rowLoop:
+    bge $s3, 9, reset_conflict_nextCol
+    
+    move $a0, $s3
+    move $a1, $s4
+    jal getCell
+    
+    li $t2, 0xFF
+    beq $v0, $t2, reset_error
+    
+    beqz $v1, reset_conflict_nextCell
+    
+    srl $t3, $v0, 4
+    andi $t3, $t3, 0x0F
+    
+    bne $t3, $s1, reset_conflict_nextCell
+
+    andi $t4, $v0, 0x0F
+    
+    srl $t5, $s0, 8
+    andi $t5, $t5, 0xFF
+    andi $t6, $t5, 0x0F
+    
+    andi $t7, $s0, 0xFF
+    andi $t8, $t7, 0x0F
+    
+    beq $t4, $t6, reset_conflict_isPreset
+    beq $t4, $t8, reset_conflict_isGame
+    
+    j reset_error
+    
+reset_conflict_isPreset:
+    move $a0, $s3
+    move $a1, $s4
+    li $a2, -1
+    move $a3, $t5
+    jal setCell
+    bltz $v0, reset_error
+    
+    addi $s5, $s5, 1
+    j reset_conflict_nextCell
+    
+reset_conflict_isGame:
+    move $a0, $s3
+    move $a1, $s4
+    li $a2, -1
+    move $a3, $t7
+    jal setCell
+    bltz $v0, reset_error
+    
+    addi $s5, $s5, 1
+    
+reset_conflict_nextCell:
+    addi $s3, $s3, 1
+    j reset_conflict_rowLoop
+    
+reset_conflict_nextCol:
+    addi $s4, $s4, 1
+    j reset_conflict_colLoop
+
+reset_conflict_checkCount:
+    blt $s5, $s2, reset_error
+    j reset_success
+    
+reset_success:
+    li $v0, 0
+    j reset_done
+    
+reset_error:
+    li $v0, -1
+    
+reset_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
+    lw $s4, 20($sp)
+    lw $s5, 24($sp)
+    addi $sp, $sp, 28
+    jr $ra
+    
