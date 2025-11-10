@@ -318,3 +318,53 @@ reset_done:
     addi $sp, $sp, 28
     jr $ra
     
+#function E
+isPresetCell:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    #0<=row<9
+    bltz $a0, isPresetCell_error
+    bge $a0, 9, isPresetCell_error
+    
+    #0<=col<9
+    bltz $a1, isPresetCell_error
+    bge $a1, 9, isPresetCell_error
+    
+    #save row n col
+    move $t0, $a0
+    move $t1, $a1
+    
+    move $a0, $t0
+    move $a1, $t1
+    jal getCell
+    
+    li $t2, 0xFF
+    beq $v0, $t2, isPresetCell_error
+   
+    beqz $v1, isPresetCell_notPreset
+    
+    srl $t3, $v0, 4
+    andi $t3, $t3, 0x0F
+    
+#white not preset
+    li $t4, 0xF
+    beq $t3, $t4, isPresetCell_notPreset
+    
+#value, nonwhite - preset
+    li $v0, 1
+    j isPresetCell_done
+
+isPresetCell_notPreset:
+    li $v0, 0
+    j isPresetCell_done
+
+isPresetCell_error:
+    li $v0, -1
+
+isPresetCell_done:
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+
