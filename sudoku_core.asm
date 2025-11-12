@@ -368,3 +368,138 @@ isPresetCell_done:
     jr $ra
 
 
+# Function E: readFile
+readFile:
+#stack 52 bytes
+#0-35 saved (9 x 4)
+#36-43 
+#44 value, 48 type
+    addi $sp, $sp, -52
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
+    sw $s4, 20($sp)
+    sw $s5, 24($sp)
+    sw $s6, 28($sp)
+    sw $s7, 32($sp)
+    
+    move $t9, $a0
+    move $s1, $a1
+    
+    li $s0, 0
+    srl $s2, $s1, 8
+    andi $s2, $s2, 0xFF
+    andi $s3, $s1, 0xFF
+    
+    move $a0, $s1
+    li $a1, 0
+    li $a2, -1
+    jal reset
+    bltz $v0, readFile_error
+    
+#open file for reading
+    move $a0, $t9 
+    li $a1, 0
+    li $a2, 0
+    li $v0, 13 #13 open file
+    syscall
+    
+#successful
+    bltz $v0, readFile_error
+    move $s0, $v0 #save the descriptor
+    li $s4, 0
+
+readFile_loop:
+#read 5 chars
+    move $a0, $s0
+    addi $a1, $sp, 36
+    li $a2, 5
+    li $v0, 14
+    syscall
+    
+    blez $v0, readFile_close
+    
+    addi $a0, $sp, 36
+    li $a1, 0
+    jal getBoardInfo
+    li $t0, -1
+    beq $v0, $t0, readFile_error
+    beq $v1, $t0, readFile_error
+    move $s5, $v0
+    move $s6, $v1
+    
+#get value , type
+    addi $a0, $sp, 36
+    li $a1, 1
+    jal getBoardInfo
+    li $t0, -1
+    beq $v0, $t0, readFile_error
+    beq $v1, $t0, readFile_error
+    sw $v0, 44($sp)
+    sw $v1, 48($sp)
+    
+    move $a0, $s5
+    move $a1, $s6
+    jal getCell
+    li $t0, 0xFF
+    beq $v0, $t0, readFile_error
+    move $s7, $v1
+    
+    lw $t6, 44($sp) #restore value
+    lw $t5, 48($sp) #restore type
+    li $t0, 'P'
+    beq $t5, $t0, readFile_preset
+    
+#game cell color
+    move $t4, $s3 
+    j readFile_setCell
+
+readFile_preset:
+    move $t4, $s2 #preset color
+
+readFile_setCell:
+    move $a0, $s5
+    move $a1, $s6
+    move $a2, $t6
+    move $a3, $t4
+    jal setCell
+    bltz $v0, readFile_error
+
+    bnez $s7, readFile_loop
+    addi $s4, $s4, 1
+    j readFile_loop
+
+readFile_close:
+    #close the file
+    move $a0, $s0
+    li $v0, 16
+    syscall
+    
+    move $v0, $s4
+    j readFile_done
+
+readFile_error:
+    beqz $s0, readfile_skip_close
+    move $a0, $s0
+    li $v0, 16
+    syscall
+
+readfile_skip_close:
+    li $v0, -1
+
+readFile_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
+    lw $s4, 20($sp)
+    lw $s5, 24($sp)
+    lw $s6, 28($sp)
+    lw $s7, 32($sp)
+    addi $sp, $sp, 52
+    jr $ra
+
+
