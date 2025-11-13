@@ -503,3 +503,88 @@ readFile_done:
     jr $ra
 
 
+# Part #3 Functions
+rowColCheck:
+    addi $sp, $sp, -20
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
+    
+    bltz $a0, rowColCheck_error
+    bge $a0, 9, rowColCheck_error
+    bltz $a1, rowColCheck_error
+    bge $a1, 9, rowColCheck_error
+    blt $a2, -1, rowColCheck_error
+    bgt $a2, 9, rowColCheck_error
+    
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
+    move $s3, $a3
+    
+    beqz $s3, rowColCheck_row
+    
+rowColCheck_col:
+    li $t0, 0
+rowColCheck_col_loop:
+    bge $t0, 9, rowColCheck_noConflict
+    beq $t0, $s0, rowColCheck_col_skip
+    move $a0, $t0
+    move $a1, $s1
+    jal getCell
+    li $t1, 0xFF
+    beq $v0, $t1, rowColCheck_error
+    beqz $v1, rowColCheck_col_skip
+    bne $v1, $s2, rowColCheck_col_skip
+    move $v0, $t0    
+    move $v1, $s1
+    j rowColCheck_done
+
+rowColCheck_col_skip:
+    addi $t0, $t0, 1
+    j rowColCheck_col_loop
+
+rowColCheck_row:
+    li $t0, 0
+rowColCheck_row_loop:
+    bge $t0, 9, rowColCheck_noConflict
+    beq $t0, $s1, rowColCheck_row_skip
+    
+    move $a0, $s0
+    move $a1, $t0
+    jal getCell
+    
+    li $t1, 0xFF
+    beq $v0, $t1, rowColCheck_error
+    
+    beqz $v1, rowColCheck_row_skip
+    
+    bne $v1, $s2, rowColCheck_row_skip
+    
+    move $v0, $s0
+    move $v1, $t0
+    j rowColCheck_done
+
+rowColCheck_row_skip:
+    addi $t0, $t0, 1
+    j rowColCheck_row_loop
+
+rowColCheck_noConflict:
+    li $v0, -1
+    li $v1, -1
+    j rowColCheck_done
+
+rowColCheck_error:
+    li $v0, -1
+    li $v1, -1
+
+rowColCheck_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
+    addi $sp, $sp, 20
+    jr $ra
