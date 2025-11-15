@@ -588,3 +588,93 @@ rowColCheck_done:
     lw $s3, 16($sp)
     addi $sp, $sp, 20
     jr $ra
+
+# Function G squareCheck
+squareCheck:
+    addi $sp, $sp, -28
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
+    sw $s4, 20($sp)
+    sw $s5, 24($sp)
+    
+    bltz $a0, squareCheck_error
+    bge $a0, 9, squareCheck_error
+    bltz $a1, squareCheck_error
+    bge $a1, 9, squareCheck_error
+    blt $a2, -1, squareCheck_error
+    bgt $a2, 9, squareCheck_error
+    
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
+    
+    li $t0, 3
+    div $s0, $t0
+    mflo $t1
+    mul $s3, $t1, $t0
+    
+    div $s1, $t0
+    mflo $t1
+    mul $s4, $t1, $t0
+    
+    move $t0, $s3
+    addi $t5, $s3, 3
+    
+squareCheck_row_loop:
+    bge $t0, $t5, squareCheck_noConflict
+    
+    move $t1, $s4
+    addi $t6, $s4, 3
+    
+squareCheck_col_loop:
+    bge $t1, $t6, squareCheck_row_next
+    
+    bne $t0, $s0, squareCheck_checkCell
+    beq $t1, $s1, squareCheck_col_next
+    
+squareCheck_checkCell:
+    move $a0, $t0
+    move $a1, $t1
+    jal getCell
+    
+    li $t2, 0xFF
+    beq $v0, $t2, squareCheck_error
+    
+    beqz $v1, squareCheck_col_next
+    
+    bne $v1, $s2, squareCheck_col_next
+    
+    move $v0, $t0
+    move $v1, $t1
+    j squareCheck_done
+    
+squareCheck_col_next:
+    addi $t1, $t1, 1
+    j squareCheck_col_loop
+    
+squareCheck_row_next:
+    addi $t0, $t0, 1
+    j squareCheck_row_loop
+
+squareCheck_noConflict:
+    li $v0, -1
+    li $v1, -1
+    j squareCheck_done
+
+squareCheck_error:
+    li $v0, -1
+    li $v1, -1
+
+squareCheck_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
+    lw $s4, 20($sp)
+    lw $s5, 24($sp)
+    addi $sp, $sp, 28
+    jr $ra
