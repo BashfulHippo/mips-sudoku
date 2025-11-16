@@ -678,3 +678,153 @@ squareCheck_done:
     lw $s5, 24($sp)
     addi $sp, $sp, 28
     jr $ra
+
+# Function H: check
+check:
+    addi $sp, $sp, -36
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
+    sw $s4, 20($sp)
+    sw $s5, 24($sp)
+    sw $s6, 28($sp)
+    sw $s7, 32($sp)
+    
+    lw $s4, 36($sp)   # C36 AFTEr stack
+    
+    bltz $a0, check_error
+    bge $a0, 9, check_error
+    bltz $a1, check_error
+    bge $a1, 9, check_error
+    blt $a2, -1, check_error
+    bgt $a2, 9, check_error
+    bgt $a3, 0xF, check_error
+  
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
+    move $s3, $a3
+    
+    li $s5, 0
+    
+    move $a0, $s0
+    move $a1, $s1
+    move $a2, $s2
+    li $a3, 0
+    jal rowColCheck
+    
+    li $t0, -1
+    beq $v0, $t0, check_rowDone
+    
+    addi $s5, $s5, 1
+    
+    beqz $s4, check_rowDone
+    
+    move $s6, $v0
+    move $s7, $v1
+    
+    move $a0, $s6
+    move $a1, $s7
+    jal getCell
+    li $t0, 0xFF
+    beq $v0, $t0, check_error
+    
+    andi $t1, $v0, 0x0F
+    sll $t2, $s3, 4
+    or $t2, $t2, $t1
+    
+    move $a0, $s6
+    move $a1, $s7
+    li $a2, -1
+    move $a3, $t2
+    jal setCell
+    bltz $v0, check_error
+    
+check_rowDone:
+    move $a0, $s0
+    move $a1, $s1
+    move $a2, $s2
+    li $a3, 1
+    jal rowColCheck
+    
+    li $t0, -1
+    beq $v0, $t0, check_colDone
+    
+    addi $s5, $s5, 1
+    
+    beqz $s4, check_colDone
+    
+    move $s6, $v0
+    move $s7, $v1
+    
+    move $a0, $s6
+    move $a1, $s7
+    jal getCell
+    li $t0, 0xFF
+    beq $v0, $t0, check_error
+    
+    andi $t1, $v0, 0x0F
+    sll $t2, $s3, 4
+    or $t2, $t2, $t1
+    
+    move $a0, $s6
+    move $a1, $s7
+    li $a2, -1
+    move $a3, $t2
+    jal setCell
+    bltz $v0, check_error
+    
+check_colDone:
+    move $a0, $s0
+    move $a1, $s1
+    move $a2, $s2
+    jal squareCheck
+    
+    li $t0, -1
+    beq $v0, $t0, check_squareDone
+    
+    addi $s5, $s5, 1
+    
+    beqz $s4, check_squareDone
+    
+    move $s6, $v0
+    move $s7, $v1
+    
+    move $a0, $s6
+    move $a1, $s7
+    jal getCell
+    li $t0, 0xFF
+    beq $v0, $t0, check_error
+    
+    andi $t1, $v0, 0x0F
+    sll $t2, $s3, 4
+    or $t2, $t2, $t1
+    
+    move $a0, $s6
+    move $a1, $s7
+    li $a2, -1
+    move $a3, $t2
+    jal setCell
+    bltz $v0, check_error
+    
+check_squareDone:
+    move $v0, $s5
+    j check_done
+    
+check_error:
+    li $v0, -1
+    
+check_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
+    lw $s4, 20($sp)
+    lw $s5, 24($sp)
+    lw $s6, 28($sp)
+    lw $s7, 32($sp)
+    addi $sp, $sp, 36
+    jr $ra
