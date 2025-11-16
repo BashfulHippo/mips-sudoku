@@ -828,3 +828,133 @@ check_done:
     lw $s7, 32($sp)
     addi $sp, $sp, 36
     jr $ra
+
+# function I: makeMove
+makeMove:
+	addi $sp, $sp, -40
+	sw $ra, 0($sp)
+	sw $s0, 4($sp) # move string
+	sw $s1, 8($sp) # layerColors
+	sw $s2, 12($sp) #err color
+	sw $s3, 16($sp) #row
+	sw $s4, 20($sp) #col
+	sw $s5, 24($sp) # moveValue
+	sw $s6, 28($sp) # cellColor
+	sw $s7, 32($sp) #curvalue
+	#save
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	srl $t0, $s1, 8 #preset color
+	andi $t0, $t0, 0xFF
+	andi $t1, $s1, 0xFF #gamecolor
+	sw $t0, 36($sp)
+	
+	move $a0, $s0
+	li $a1, 0
+	jal getBoardInfo
+	li $t0, -1
+	beq $v0, $t0, makeMove_invalidMove
+	beq $v1, $t0, makeMove_invalidMove
+	
+	move $s3, $v0
+	move $s4, $v1
+	
+	move $a0, $s0
+	li $a1, 1
+	jal getBoardInfo
+	li $t0, -1
+	beq $v0, $t0, makeMove_invalidMove
+	
+	move $s5, $v0
+	
+	move $a0, $s3
+	move $a1, $s4
+	jal getCell
+	li $t0, 0xFF
+	beq $v0, $t0, makeMove_invalidMove
+	
+	move $s6, $v0
+	move $s7, $v1
+	
+	beq $s7, $s5, makeMove_noChange
+	beqz $s7, makeMove_checkifClearingempty
+	j makeMove_continue
+	
+makeMove_checkifClearingempty:
+	beqz $s5, makeMove_noChange
+	
+makeMove_continue:
+	lw $t0, 36($sp)
+	andi $t1, $s6, 0x0F
+	andi $t2, $t0, 0x0F
+	beq $t1, $t2, makeMove_invalidMove
+	
+	beqz $s5, makeMove_clearCell
+	
+	move $a0, $s3 #row
+	move $a1, $s4 #col
+	move $a2, $s5 #move Value
+	move $a3, $s2  #err color
+	addi $sp, $sp, -4
+	li $t0, 1
+	sw $t0, 0($sp)
+	jal check
+	addi $sp, $sp, 4
+	
+	bnez $v0, makeMove_conflicts #branch not equal 0
+	
+	move $a0, $s3 #row
+	move $a1, $s4 #col
+	move $a2, $s5 #moveValue
+	andi $a3, $s1, 0xFF #game cell color
+	jal setCell
+	bltz $v0, makeMove_invalidMove
+	
+#return success
+	li $v0, 0
+	li $v1, -1
+	j makeMove_done
+
+makeMove_clearCell:
+	move $a0, $s3 # row
+	move $a1, $s4 # col
+	li $a2, 0 # clear value
+	andi $a3, $s1, 0xFF # game cell color
+	jal setCell
+	bltz $v0, makeMove_invalidMove
+	
+	#return success
+	li $v0, 0
+	li $v1, 1
+	j makeMove_done
+
+makeMove_noChange:
+	li $v0, 0
+	li $v1, 0
+	j makeMove_done
+
+makeMove_conflicts:
+	# save conflcit coutn first before changign v0
+	move $t0, $v0 #save conflcit count from cehck
+	li $v0, -1
+	move $v1, $t0
+	j makeMove_done
+
+makeMove_invalidMove:
+	li $v0, -1
+	li $v1, 0
+
+makeMove_done:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	addi $sp, $sp, 40
+	jr $ra
