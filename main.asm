@@ -98,3 +98,83 @@ main_enterColors:
 	# print error message
 	li $v0, 4
 	la $a0, invalid_colorSet_str
+	syscall
+	j main_enterColors
+
+main_colors_done:
+	# save colors
+	move $s0, $v0   # CColor curColor
+	move $s1, $v1   # err_bg	
+main_loadgame:
+	li $v0, 4
+	la $a0, main_filename_str 
+	syscall
+
+	addi $sp, $sp, -48 # create filename buffer
+	move $a0, $sp
+	li $a1, 48
+	li $v0, 8
+	syscall
+	move $a0, $sp # replace '\n' with '\0'
+	jal __replaceNewline
+
+	move $a0, $sp
+    move $a1, $s0
+	jal readFile
+	bltz $v0, main_loadgame_error
+	addi $sp, $sp, 48  # remove filename buffer
+
+	li $s2, 81		 # total cells in the board
+	sub $s2, $s2, $v0   # remaining cells to fill = total cells in board - unique filled cells
+	
+	addi $sp, $sp, -8 # create move buffer
+
+	li $s3, 0    # numConflicts to 0
+main_move_loop:
+	beqz $s2, main_game_won	
+
+	# Prompt player to enter move
+	li $v0, 4
+	la $a0, enter_move_str
+	syscall	
+
+	# Take user input for move
+	move $a0, $sp
+	li $a1, 48
+	li $v0, 8
+	syscall
+		
+	lb $t0, 0($sp) # get first char of string
+	beq $t0, 'R', main_make_move_reset
+	beq $t0, 'Q', main_quit
+	beq $t0, 'S', main_saveGame
+	beq $t0, 'H', main_hint
+	beq $t0, 'A', main_autosolve
+
+	j main_make_move
+
+############################################
+# Auto-solve using backtracking
+main_autosolve:
+	li $v0, 4
+	la $a0, solve_start_str
+	syscall
+
+	andi $a0, $s0, 0xFF    # game cell color
+	jal solve
+
+	beqz $v0, main_solve_failed
+
+	li $v0, 4
+	la $a0, solve_done_str
+	syscall
+	j main_game_won
+
+main_solve_failed:
+	li $v0, 4
+	la $a0, solve_fail_str
+	syscall
+	j main_move_loop
+############################################
+
+############################################
