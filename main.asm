@@ -178,3 +178,103 @@ main_solve_failed:
 ############################################
 
 ############################################
+# Extra Credit - Save Game
+# To use, uncomment this section and line 150 and the appropriate string in the .data section (comment out line 10)
+main_saveGame:
+
+	li $v0, 4
+	la $a0, main_save_str
+	syscall
+
+	addi $sp, $sp, -48 # create filename buffer
+	move $a0, $sp
+	li $a1, 48
+	li $v0, 8
+	syscall
+	move $a0, $sp # replace '\n' with '\0'
+	jal __replaceNewline
+
+	move $a0, $sp   # filename
+       move $a1, $s0   # curColor
+	jal saveBoard
+   bltz $v0, main_saveBoard_err
+	addi $sp, $sp, 48
+
+	li $v0, 4
+	la $a0, main_save_game_str
+	syscall	
+
+    j main_move_loop
+
+main_saveBoard_err:
+
+	li $v0, 4
+	la $a0, main_save_error_str
+	syscall
+   j main_move_loop
+###########################################
+
+############################################
+# Extra Credit - Hint
+# To use, uncomment this section and line 151 and the appropriate string in the .data section (comment out line 10)
+main_hint:
+	li $v0, 4
+	la $a0, main_hint_str 
+	syscall
+
+	# Take user input for move
+	move $a0, $sp
+	li $a1, 48
+	li $v0, 8
+	syscall
+
+    move $a0, $sp  # move string
+    move $a1, $s0  # curColor
+	jal hint
+    move $t1, $v0  # save the bit vector
+
+	li $v0, 4
+	la $a0, main_hint_response
+	syscall   
+
+	srl $t1, $t1, 1  # drop off the 0 bit
+  li $t2, 1
+main_print_hint:
+   beq $t2, 10, main_print_hint_done
+   
+   andi $t3, $t1, 0x1   # get LSB
+   beqz $t3, main_print_hint_noprint   # skip value  
+   li $v0, 1
+   move $a0, $t2
+   syscall
+   li $v0, 11
+   li $a0, ' '
+   syscall
+main_print_hint_noprint:
+   addi $t2, $t2, 1
+	srl $t1, $t1, 1  # drop off the 0 bit
+	j main_print_hint
+main_print_hint_done:
+   li $v0, 11
+   li $a0, '\n'
+   syscall
+ 	j main_move_loop
+############################################
+
+main_make_move_reset:
+	# reset the board - change numConflicts to 0	
+	move $a0, $s0	# curColor
+	move $a1, $s1	# err_bg
+	li $a2, 0       # numConflicts == 0 to reset to preset cells only
+	jal reset
+	bltz $v0, main_game_error
+	move $s3, $0    # reset numConflicts
+	j main_move_loop
+main_make_move:
+
+	blez $s3, main_noConflict
+	# remove conflict cells
+	move $a0, $s0	# curColor
+	move $a1, $s1	# err_bg
+	move $a2, $s3   # numConflicts
+	jal reset
