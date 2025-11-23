@@ -278,3 +278,72 @@ main_make_move:
 	move $a1, $s1	# err_bg
 	move $a2, $s3   # numConflicts
 	jal reset
+	bltz $v0, main_game_error
+	move $s3, $0    # reset numConflicts
+
+main_noConflict:
+	move $a0, $sp   # move string
+	move $a1, $s0	# curColors
+	move $a2, $s1	# err_bg
+	jal makeMove
+
+	bltz $v0, main_makeMove_error
+	
+	# Successful move
+	beqz $v1, main_move_loop  # make move returned (0,0) - no action
+	add  $s2, $v1, $s2        # adjust number of cells left to fill
+	
+	j main_move_loop
+
+main_makeMove_error:
+	beqz $v1, main_makeMove_error_invalidMove  # make move returned (-1,0) - invalid move
+	
+	move $s3, $v1  # save the conflicts to clear on next move
+
+	# conflicts!
+	li $v0, 4
+	la $a0, conflicts_str
+	syscall
+
+	j main_move_loop
+	
+main_makeMove_error_invalidMove:
+	li $v0, 4
+	la $a0, invalid_move_str
+	syscall
+	
+	j main_move_loop
+
+main_game_won:
+
+	############################################
+	# Extra Credit - uncomment this section
+	 li $a0, 0xE3DA   # Cyan and pint win star! 
+	 jal setWinBoard
+	############################################
+
+	li $v0, 4
+	la $a0, game_won_str
+	syscall
+
+main_quit:
+	addi $sp, $sp, 8 #  remove move buffer
+
+	# quit game!
+	li $v0, 10
+	syscall 
+
+main_loadgame_error:
+	li $v0, 4
+	la $a0, main_filename_error_str
+	syscall
+
+	j main_loadgame
+
+main_game_error:
+	li $v0, 4
+	la $a0, main_game_error_str
+	syscall
+
+	j main_quit
+
