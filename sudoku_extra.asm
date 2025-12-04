@@ -243,3 +243,68 @@ saveBoard_done:
 	jr $ra
 
 
+#function L (hint)
+hint:
+    addi $sp, $sp, -32
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
+    sw $s4, 20($sp)
+    sw $s5, 24($sp)
+    sw $s6, 28($sp)
+    
+    #temp
+    li $s4, 0
+    li $s5, 1
+    
+hint_debug_loop:
+    bgt $s5, 9, hint_debug_done
+    li $t1, 1
+    sllv $t0, $t1, $s5
+    or $s4, $s4, $t0
+    addi $s5, $s5, 1
+    j hint_debug_loop
+    
+hint_debug_done:
+    move $v0, $s4
+    j hint_return
+hint_test_loop:
+	bgt $s5, 9, hint_done
+	move $a0, $s2 # row
+	move $a1, $s3 # col
+	move $a2, $s5 # test valyee
+	li $a3, 0
+	addi $sp, $sp, -4
+	sw $zero, 0($sp)
+	jal check
+	addi $sp, $sp, 4
+	
+	bnez $v0, hint_conflict
+	
+	li $t1, 1
+	sllv $t0, $t1, $s5  #sllv (variable shift)
+	or $s4, $s4, $t0 #set the bit
+hint_conflict:
+	addi $s5, $s5, 1
+	j hint_test_loop
+	
+hint_done:
+	move $v0, $s4
+	j hint_return
+	
+hint_error:
+	li $v0, 0xFFFF
+	
+hint_return:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	addi $sp, $sp, 32
+	jr $ra
