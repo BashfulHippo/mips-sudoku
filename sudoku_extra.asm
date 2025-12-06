@@ -308,3 +308,58 @@ hint_return:
 	lw $s6, 28($sp)
 	addi $sp, $sp, 32
 	jr $ra
+
+
+# ============================================
+# BACKTRACKING SOLVER
+# recursive constraint-based sudoku solver
+# ============================================
+
+# findEmpty: find first empty cell on board
+# returns: $v0 = row (0-8), $v1 = col (0-8)
+#          $v0 = -1 if no empty cells (solved)
+findEmpty:
+	addi $sp, $sp, -12
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+
+	li $s0, 0              # row = 0
+findEmpty_rowLoop:
+	bge $s0, 9, findEmpty_notFound
+	li $s1, 0              # col = 0
+
+findEmpty_colLoop:
+	bge $s1, 9, findEmpty_nextRow
+
+	move $a0, $s0
+	move $a1, $s1
+	jal getCell
+
+	beqz $v1, findEmpty_found    # if value == 0, found empty
+
+	addi $s1, $s1, 1
+	j findEmpty_colLoop
+
+findEmpty_nextRow:
+	addi $s0, $s0, 1
+	j findEmpty_rowLoop
+
+findEmpty_found:
+	move $v0, $s0          # return row
+	move $v1, $s1          # return col
+	j findEmpty_done
+
+findEmpty_notFound:
+	li $v0, -1             # no empty cells
+	li $v1, -1
+
+findEmpty_done:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	addi $sp, $sp, 12
+	jr $ra
+
+
+# isValid: check if value can be placed at (row, col)
