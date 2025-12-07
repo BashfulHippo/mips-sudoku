@@ -363,3 +363,63 @@ findEmpty_done:
 
 
 # isValid: check if value can be placed at (row, col)
+# $a0 = row, $a1 = col, $a2 = value
+# returns: $v0 = 1 if valid, 0 if conflict
+isValid:
+	addi $sp, $sp, -20
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+	sw $s2, 12($sp)
+	sw $s3, 16($sp)
+
+	move $s0, $a0          # save row
+	move $s1, $a1          # save col
+	move $s2, $a2          # save value
+
+	# check row - use rowColCheck with flag=0
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	li $a3, 0              # check row
+	jal rowColCheck
+
+	li $t0, -1
+	bne $v0, $t0, isValid_invalid   # conflict found
+
+	# check column - use rowColCheck with flag=1
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	li $a3, 1              # check column
+	jal rowColCheck
+
+	li $t0, -1
+	bne $v0, $t0, isValid_invalid   # conflict found
+
+	# check 3x3 box
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	jal squareCheck
+
+	li $t0, -1
+	bne $v0, $t0, isValid_invalid   # conflict found
+
+	li $v0, 1              # valid
+	j isValid_done
+
+isValid_invalid:
+	li $v0, 0              # invalid
+
+isValid_done:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	addi $sp, $sp, 20
+	jr $ra
+
+
+# solve: recursive backtracking solver
