@@ -423,3 +423,78 @@ isValid_done:
 
 
 # solve: recursive backtracking solver
+# $a0 = cell color for solved cells
+# returns: $v0 = 1 if solved, 0 if unsolvable
+solve:
+	addi $sp, $sp, -24
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)          # row
+	sw $s1, 8($sp)          # col
+	sw $s2, 12($sp)         # current value to try
+	sw $s3, 16($sp)         # cell color
+	sw $s4, 20($sp)         # temp
+
+	move $s3, $a0           # save color
+
+	# find next empty cell
+	jal findEmpty
+
+	li $t0, -1
+	beq $v0, $t0, solve_success   # no empty cells = solved
+
+	move $s0, $v0           # save row
+	move $s1, $v1           # save col
+
+	# try values 1-9
+	li $s2, 1
+solve_tryValue:
+	bgt $s2, 9, solve_fail  # tried all values, backtrack
+
+	# check if value is valid
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	jal isValid
+
+	beqz $v0, solve_nextValue   # not valid, try next
+
+	# place the value
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	move $a3, $s3           # color
+	jal setCell
+
+	# recursive call
+	move $a0, $s3
+	jal solve
+
+	bnez $v0, solve_success # solved!
+
+	# backtrack - clear the cell
+	move $a0, $s0
+	move $a1, $s1
+	li $a2, 0               # clear value
+	li $a3, 0xF0            # reset color
+	jal setCell
+
+solve_nextValue:
+	addi $s2, $s2, 1
+	j solve_tryValue
+
+solve_fail:
+	li $v0, 0               # unsolvable from this state
+	j solve_done
+
+solve_success:
+	li $v0, 1               # solved
+
+solve_done:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	addi $sp, $sp, 24
+	jr $ra
