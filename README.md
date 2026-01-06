@@ -61,3 +61,4 @@ puzzles use `RCVT` format per line:
 - T = type (P=preset, G=game)
 
 example: `0A2P` = row 0, column A, value 2, preset cell
+
