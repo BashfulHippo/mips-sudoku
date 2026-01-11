@@ -35,7 +35,7 @@ boards/           - puzzle files (easy, medium, hard, complete)
 
 ## running
 
-requires [mars mips simulator](http://courses.missouristate.edu/kenvollmar/mars/)
+requires [mars mips simulator]([http://courses.missouristate.edu/kenvollmar/mars/](https://dpetersanderson.github.io/))
 
 1. open mars
 2. file > open > main.asm
